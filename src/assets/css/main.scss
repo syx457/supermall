@@ -1,0 +1,13 @@
+$primary-color: green;
+.app{
+  color: $primary-color;
+
+  .h2{
+    font-size: 20px;
+  }
+  a{
+    &:hover{
+      color: red;
+    }
+  }
+}

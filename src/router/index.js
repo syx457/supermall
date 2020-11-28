@@ -6,7 +6,7 @@ const Category = () => import('../views/category/Category')
 const Cart = () => import('../views/cart/Cart')
 const Profile = () => import('../views/profile/Profile')
 
-// 1.安装插件
+// 1.安装插件，会执行它的install方法
 Vue.use(VueRouter)
 
 // 2.创建router
