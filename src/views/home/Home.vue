@@ -1,16 +1,19 @@
 <template>
   <div id="home">
     <nav-bar class="home-nav"><div slot="center">购物街</div></nav-bar>
+    <tab-control :titles="['流行','新款','精选']" class="tab-control"
+                 @tabClick="tabClick" ref="tabControl1" v-show="isTabFixed"/>
     <scroll class="content" ref="scroll"
             :probe-type="3"
             @scroll="getemitScroll"
             :pull-up-load="true"
+            @pullingUp="loadMore"
             >
-      <home-swiper :banners="banners"/>
+      <home-swiper :banners="banners" @swiperImageLoad="swiperImageLoad"/>
       <recommend-view :recommends="recommends"/>
       <feature-view/>
       <tab-control :titles="['流行','新款','精选']" class="tab-control"
-                   @tabClick="tabClick"/>
+                   @tabClick="tabClick" ref="tabControl2"/>
       <goods-list :goods="showGoods"></goods-list>
     </scroll>
 <!--    因为在自定义组件上注册的事件触发的是组件自定义的事件，根本不是原生的dom事件，既然不是，当然不会触发喽-->
@@ -32,6 +35,7 @@ import BackTop from "@/components/content/backTop/BackTop";
 import Scroll from "@/components/common/scroll/Scroll";
 
 import {getHomeMultidata,getHomeGoods} from "@/network/home";
+import {debounce} from '@/common/utils'
 
 export default {
   name: "Home",
@@ -56,8 +60,14 @@ export default {
         'sell': {page: 0, list: []}
       },
       currentType: 'pop',
-      isshowBackTop: false
+      isshowBackTop: false,
+      isload: false,
+      tabOffsetTop: 0,
+      isTabFixed: false
     }
+  },
+  destroyed() {
+    console.log('销毁');
   },
   created() {
     //1.请求多个数据,this指向的是该组件
@@ -70,14 +80,17 @@ export default {
 
   },
   mounted() {
+    //1.图片加载完成的事件监听
     // this.$refs.scroll.refresh，refresh不能带括号，否则就不是函数了，是返回值
-    const refresh = this.debounce(this.$refs.scroll.refresh, 500)
-    //3.监听item中的图片加载完成
+    //refresh是func的返回值(scroll中的refresh'-----')
+    const refresh = debounce(this.$refs.scroll.refresh, 500)
+    //监听GoodsListItem中的图片加载完成
     //默认情况下$bus是没有值的，需要在main.js中添加vue实例
     this.$bus.$on('itemImageLoad', () => {
+      //这个refresh是防抖函数的返回值,debounce中的...arg,表示refresh可以进行传参
+      //...意味着不止传一个参数，可以传多个
       refresh()
     })
-
 
   },
   computed: {
@@ -86,19 +99,6 @@ export default {
     }
   },
   methods: {
-    //防抖函数
-    debounce(func, delay) {
-      let timer = null
-      return function (...args) {
-        if(timer) clearTimeout(timer)
-        //setTimeout有一个事件循环的概念，加入到下一次执行循环的尾部执行
-        timer = setTimeout( () => {
-          func.apply(this, args)
-
-        }, delay)
-      }
-
-    },
     /*
     * 事件监听相关方法
     * */
@@ -110,6 +110,31 @@ export default {
           break
         case 2: this.currentType = 'sell'
           break
+      }
+      //将两个tabControl的点击index设为一样
+      this.$refs.tabControl1.currentIndex = index
+      this.$refs.tabControl2.currentIndex = index
+    },
+    backClick() {
+      this.$refs.scroll.scrollTo(0, 0) //Scroll中的方法，scrollTo
+    },
+    getemitScroll(position) {
+      //1.判断BackTop是否显示
+      this.isshowBackTop = -(position.y) > 1000
+
+      //2.决定tabControl是否吸顶(position: fixed)
+      this.isTabFixed = (-position.y) > this.tabOffsetTop
+    },
+    loadMore() {
+      this.getHomeGoods(this.currentType)
+    },
+
+    //2.获取tabControl的offsetTop
+    //所有的组件都有一个属性$el: 用于获取组件中的元素
+    swiperImageLoad() {
+      if (!this.isload){
+        this.tabOffsetTop = this.$refs.tabControl2.$el.offsetTop
+        this.isload = true
       }
     },
     /*
@@ -125,19 +150,15 @@ export default {
     getHomeGoods(type) {
       //当前页码加一
       const page = this.goods[type].page + 1
+      //获取下一页的数据
       getHomeGoods(type, page).then(res => {
         // console.log(res);
         this.goods[type].list.push(...res.data.list) //将服务器中的获取的所有list都添加
         this.goods[type].page += 1 //页数加一
 
-        // this.$refs.scroll.finishPullUp()
+        //默认只能加载一次，要使用finish完成加载更多
+        this.$refs.scroll.finishPullUp()
       })
-    },
-    backClick() {
-      this.$refs.scroll.scrollTo(0, 0) //Scroll中的方法，scrollTo
-    },
-    getemitScroll(position) {
-      this.isshowBackTop = -(position.y) > 1000
     },
 
   }
@@ -154,16 +175,16 @@ export default {
   background-color: var(--color-tint);
   color: #f6f6f6;
 
-  position: fixed;
-  left: 0px;
-  top: 0px;
-  bottom: 0px;
-  right: 0px;
-  z-index: 9;
+  /*在使用浏览器原生滚动时，为了让导航不跟随一起滚动*/
+  /*position: fixed;*/
+  /*left: 0px;*/
+  /*top: 0px;*/
+  /*bottom: 0px;*/
+  /*right: 0px;*/
+  /*z-index: 9;*/
 }
 .tab-control {
-  position: sticky;
-  top: 44px;
+  position: relative;
   z-index: 9;
 }
 .content{

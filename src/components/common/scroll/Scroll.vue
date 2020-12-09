@@ -38,15 +38,19 @@ export default {
       pullUpLoad: this.pullUpLoad
     })
     //2.监听滚动的位置,scroll
-    this.scroll.on('scroll', (position) => {
-      // console.log(position);
-      //将position传出去
-      this.$emit('scroll', position)
-    })
-    //3.监听上拉事件,pullingUp
-    // this.scroll.on('pullingUp', () => {
-    //   this.$emit('pullingUp')
-    // })
+    if(this.probeType === 2 || this.probeType === 3){
+      this.scroll.on('scroll', (position) => {
+        // console.log(position);
+        //将position传出去
+        this.$emit('scroll', position)
+      })
+    }
+    // 3.监听上拉事件,pullingUp
+    if (this.pullUpLoad) {
+      this.scroll.on('pullingUp', () => {
+        this.$emit('pullingUp')
+      })
+    }
   },
   methods: {
     //封装scrollTo
@@ -54,13 +58,13 @@ export default {
       this.scroll && this.scroll.scrollTo(x, y, time)
     },
     refresh() {
-      console.log('----');
+      // console.log('----');
       this.scroll && this.scroll.refresh()
+    },
+    // 封装finishPullUp
+    finishPullUp() {
+      this.scroll && this.scroll.finishPullUp()
     }
-    //封装finishPullUp
-    // finishPullUp() {
-    //   this.scroll.finishPullUp()
-    // }
   }
 }
 </script>
