@@ -1,7 +1,7 @@
 <template>
   <div class="detail-swiper">
     <swiper class="swiper-carousel">
-      <swiper-item v-for="item in topImages">
+      <swiper-item v-for="item in topImages" >
         <img :src="item" alt="">
       </swiper-item>
     </swiper>
@@ -22,6 +22,9 @@ export default {
         return []
       }
     }
+  },
+  methods: {
+
   }
 }
 </script>

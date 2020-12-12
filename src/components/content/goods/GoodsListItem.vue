@@ -1,6 +1,6 @@
 <template>
   <div class="goods-item">
-    <img :src="goodsItem.show.img" alt="" @load="imageLoad" @click="itemClick">
+    <img :src="showImage" alt="" @load="imageLoad" @click="itemClick">
     <div class="goods-info">
       <p>{{goodsItem.title}}</p>
       <span class="price">{{goodsItem.price}}</span>
@@ -25,8 +25,15 @@ export default {
         this.$bus.$emit('itemImageLoad')
       },
       itemClick() {
+        //加入响应的goodsitem中的iid
         this.$router.push('/detail/' + this.goodsItem.iid)
       }
+  },
+  computed: {
+    //判断是image还是img
+    showImage() {
+      return this.goodsItem.image || this.goodsItem.show.img
+    }
   }
 }
 </script>

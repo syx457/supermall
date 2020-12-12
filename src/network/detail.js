@@ -9,7 +9,14 @@ export function getDetail(iid) {
   })
 }
 
+//请求recommend的数据
+export function getRecommend() {
+  return request({
+    url: '/recommend'
+  })
+}
 
+//进行数据整合封装，然后在进行调用
 export class Goods {
   constructor(itemInfo, columns, services) {
     this.title = itemInfo.title;

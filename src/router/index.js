@@ -43,10 +43,12 @@ const router = new VueRouter({
   mode: 'history'
 })
 
+
 //解决Uncaught (in promise) NavigationDuplicated: Avoided redundant navigation to current location报错问题
 const originalPush = VueRouter.prototype.push
-VueRouter.prototype.push = function push(location) {
+VueRouter.prototype.replace = function push(location) {
   return originalPush.call(this, location).catch(err => err)
 }
+
 
 export default router

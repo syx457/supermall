@@ -8,6 +8,7 @@
       <div class="shop-middle-item shop-middle-left">
         <div class="info-sells">
           <div class="sells-count">
+<!--过滤器的写法，双花括号插值和 v-bind 表达式-->
             {{shop.sells | sellCountFilter}}
           </div>
           <div class="sells-text">总销量</div>
@@ -49,7 +50,7 @@
     filters: {
       sellCountFilter: function (value) {
         if (value < 10000) return value;
-        return (value/10000).toFixed(1) + '万'
+        return (value/10000).toFixed(2) + '万'
       }
     }
 	}

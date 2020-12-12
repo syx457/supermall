@@ -36,6 +36,7 @@ import Scroll from "@/components/common/scroll/Scroll";
 
 import {getHomeMultidata,getHomeGoods} from "@/network/home";
 import {debounce} from '@/common/utils'
+import {itemListenerMixin} from "@/common/mixin";
 
 export default {
   name: "Home",
@@ -63,11 +64,27 @@ export default {
       isshowBackTop: false,
       isload: false,
       tabOffsetTop: 0,
-      isTabFixed: false
+      isTabFixed: false,
+      saveY: 0
     }
   },
+  mixins: [itemListenerMixin],
   destroyed() {
     console.log('销毁');
+  },
+  // 进入页面时滚动到上次离开时的位置
+  activated() {
+    console.log('设置位置');
+    this.$refs.scroll.scrollTo(0, this.saveY, 0)
+    this.$refs.scroll.refresh()
+  },
+  // 记录页面离开时的位置
+  deactivated() {
+    // 保存页面位置
+    this.saveY = this.$refs.scroll.getScrollY()
+    console.log(this.saveY);
+    // 取消全局事件的监听
+    this.$bus.$off('imageLoad', this.itemImgListener)
   },
   created() {
     //1.请求多个数据,this指向的是该组件
@@ -83,15 +100,17 @@ export default {
     //1.图片加载完成的事件监听
     // this.$refs.scroll.refresh，refresh不能带括号，否则就不是函数了，是返回值
     //refresh是func的返回值(scroll中的refresh'-----')
-    const refresh = debounce(this.$refs.scroll.refresh, 500)
+    let newRefresh = debounce(this.$refs.scroll.refresh, 500)
     //监听GoodsListItem中的图片加载完成
     //默认情况下$bus是没有值的，需要在main.js中添加vue实例
-    this.$bus.$on('itemImageLoad', () => {
-      //这个refresh是防抖函数的返回值,debounce中的...arg,表示refresh可以进行传参
-      //...意味着不止传一个参数，可以传多个
-      refresh()
-    })
 
+    //对监听的事件进行保存
+    //这个refresh是防抖函数的返回值,debounce中的...arg,表示refresh可以进行传参
+    //...意味着不止传一个参数，可以传多个
+    this.itemImgListener = () => {
+      newRefresh()
+    }
+    this.$bus.$on('itemImageLoad', this.itemImgListener)
   },
   computed: {
     showGoods() {
@@ -114,6 +133,7 @@ export default {
       //将两个tabControl的点击index设为一样
       this.$refs.tabControl1.currentIndex = index
       this.$refs.tabControl2.currentIndex = index
+
     },
     backClick() {
       this.$refs.scroll.scrollTo(0, 0) //Scroll中的方法，scrollTo
