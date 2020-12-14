@@ -11,6 +11,9 @@
       <detail-comment-info :comment-info="commentInfo" ref="comment"/>
       <goods-list :goods="recommends" ref="recommend"/>
     </scroll>
+    <detail-bottom-bar @addToCart="addCart"/>
+    <back-top @click.native="backClick" v-if="isshowBackTop" />
+    <add-success :isaddSuccess="isaddSuccess"/>
   </div>
 </template>
 
@@ -22,13 +25,18 @@ import DetailShopInfo from "@/views/detail/childComps/DetailShopInfo";
 import DetailGoodsInfo from "@/views/detail/childComps/DetailGoodsInfo";
 import DetailParamInfo from "@/views/detail/childComps/DetailParamInfo";
 import DetailCommentInfo from "@/views/detail/childComps/DetailCommentInfo";
+import DetailBottomBar from "@/views/detail/childComps/DetailBottomBar";
+import AddSuccess from "@/views/detail/childComps/AddSuccess";
+
 
 import GoodsList from "@/components/content/goods/GoodsList";
 import Scroll from "@/components/common/scroll/Scroll";
 
 import {getDetail, Goods, Shop, GoodsParam, getRecommend} from "@/network/detail";
-import {itemListenerMixin} from "@/common/mixin";
+import {backTopMixin, itemListenerMixin} from "@/common/mixin";
 import {debounce} from "@/common/utils";
+import {BACKTOP_DISTANCE} from "@/common/const";
+
 
 export default {
   name: "Detail",
@@ -40,10 +48,12 @@ export default {
     DetailGoodsInfo,
     DetailParamInfo,
     DetailCommentInfo,
+    DetailBottomBar,
     GoodsList,
     Scroll,
+    AddSuccess
   },
-  mixins: [itemListenerMixin],
+  mixins: [itemListenerMixin, backTopMixin],
   data() {
     return {
       iid: {},
@@ -56,16 +66,18 @@ export default {
       recommends: [],
       themeTopYs: [],
       getThemeTopY: null,
-      currentIndex: 0
+      currentIndex: 0,
+      isaddSuccess: false
     }
   },
+
   created() {
     //1.获取保存传入的iid
     this.iid = this.$route.params.iid
 
     //2.根据iid请求详情数据
     getDetail(this.iid).then(res => {
-      // console.log(res);
+      console.log(res);
       //1.获取数据
       const data = res.result;
 
@@ -114,7 +126,7 @@ export default {
 
     //3.请求推荐数据
     getRecommend().then(res => {
-      console.log(res);
+      // console.log(res);
       this.recommends = res.data.list
     })
 
@@ -125,6 +137,8 @@ export default {
       this.themeTopYs.push(this.$refs.params.$el.offsetTop - 44)
       this.themeTopYs.push(this.$refs.comment.$el.offsetTop - 44)
       this.themeTopYs.push(this.$refs.recommend.$el.offsetTop - 44)
+      //hack做法，再添加一个最大值
+      this.themeTopYs.push(Number.MAX_VALUE)
       console.log(this.themeTopYs)
     }, 100)
 
@@ -151,19 +165,52 @@ export default {
       //positionY 超过 9120 值，index = 3
 
       let length = this.themeTopYs.length
+      //hack做法需要length-1，不然会越狱
       for(let i = 0; i < length; i++ ) {
         //this.currentIndex !== i && 用来减少打印重复
-        if (this.currentIndex !== i && (i < length - 1 && positionY >= this.themeTopYs[i] &&
+        //hack做法
+        if (this.currentIndex !== i && (positionY >= this.themeTopYs[i]
+          && positionY < this.themeTopYs[i+1])) {
+          this.currentIndex = i
+          this.$refs.navbar.currentIndex = this.currentIndex
+        }
+
+        //普通做法
+        /*if (this.currentIndex !== i && (i < length - 1 && positionY >= this.themeTopYs[i] &&
           positionY < this.themeTopYs[i+1]) || (i === length - 1 && positionY >= this.themeTopYs[i]))  {
           this.currentIndex = i
           // console.log(this.currentIndex)
           this.$refs.navbar.currentIndex = this.currentIndex
-        }
+        }*/
       }
+      this.isshowBackTop = -(position.y) > BACKTOP_DISTANCE
+
+      //2.决定tabControl是否吸顶(position: fixed)
+      this.isTabFixed = (-position.y) > this.tabOffsetTop
+    },
+    //1.添加购物车
+    addCart() {
+      const product = {}
+      product.image = this.topImages[0];
+      product.desc = this.goods.desc;
+      product.title = this.goods.title;
+      product.price = this.goods.realPrice;
+      product.iid = this.iid;
+
+      //将product添加入state
+      this.$store.dispatch('addCart', product)
+
+      setTimeout(() => {
+        this.isaddSuccess = !this.isaddSuccess
+        // console.log('111')
+      }, 500)
+      setTimeout(() => {
+        this.isaddSuccess = !this.isaddSuccess
+        // console.log('2222')
+      }, 2000)
     }
   },
   mounted() {
-
   },
   updated() {
   },
@@ -186,7 +233,7 @@ export default {
     background-color: #ffffff;
   }
   .content {
-    height: calc(100% - 44px);
-
+    height: calc(100% - 44px - 49px);
   }
+
 </style>

@@ -30,13 +30,14 @@ import FeatureView from "@/views/home/childComps/FeatureView";
 import NavBar from "@/components/common/navbar/NavBar";
 import TabControl from "@/components/content/tabControl/TabControl";
 import GoodsList from "@/components/content/goods/GoodsList";
-import BackTop from "@/components/content/backTop/BackTop";
+
 
 import Scroll from "@/components/common/scroll/Scroll";
 
 import {getHomeMultidata,getHomeGoods} from "@/network/home";
 import {debounce} from '@/common/utils'
 import {itemListenerMixin} from "@/common/mixin";
+import {backTopMixin} from "@/common/mixin";
 
 export default {
   name: "Home",
@@ -48,7 +49,7 @@ export default {
     TabControl,
     GoodsList,
     Scroll,
-    BackTop
+
   },
   data() {
     return {
@@ -61,22 +62,22 @@ export default {
         'sell': {page: 0, list: []}
       },
       currentType: 'pop',
-      isshowBackTop: false,
       isload: false,
       tabOffsetTop: 0,
       isTabFixed: false,
       saveY: 0
     }
   },
-  mixins: [itemListenerMixin],
+  mixins: [itemListenerMixin, backTopMixin],
   destroyed() {
     console.log('销毁');
   },
   // 进入页面时滚动到上次离开时的位置
   activated() {
-    console.log('设置位置');
-    this.$refs.scroll.scrollTo(0, this.saveY, 0)
+    // console.log('设置位置');
     this.$refs.scroll.refresh()
+    this.$refs.scroll.scrollTo(0, this.saveY, 0)
+
   },
   // 记录页面离开时的位置
   deactivated() {
@@ -135,9 +136,7 @@ export default {
       this.$refs.tabControl2.currentIndex = index
 
     },
-    backClick() {
-      this.$refs.scroll.scrollTo(0, 0) //Scroll中的方法，scrollTo
-    },
+
     getemitScroll(position) {
       //1.判断BackTop是否显示
       this.isshowBackTop = -(position.y) > 1000
@@ -165,6 +164,7 @@ export default {
         // this.results = res
         this.banners = res.data.banner.list
         this.recommends = res.data.recommend.list
+        // console.log(res);
       })
     },
     getHomeGoods(type) {
