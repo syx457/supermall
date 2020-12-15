@@ -11,9 +11,8 @@
       <detail-comment-info :comment-info="commentInfo" ref="comment"/>
       <goods-list :goods="recommends" ref="recommend"/>
     </scroll>
-    <detail-bottom-bar @addToCart="addCart"/>
+    <detail-bottom-bar @addToCart="addToCart"/>
     <back-top @click.native="backClick" v-if="isshowBackTop" />
-    <add-success :isaddSuccess="isaddSuccess"/>
   </div>
 </template>
 
@@ -26,8 +25,6 @@ import DetailGoodsInfo from "@/views/detail/childComps/DetailGoodsInfo";
 import DetailParamInfo from "@/views/detail/childComps/DetailParamInfo";
 import DetailCommentInfo from "@/views/detail/childComps/DetailCommentInfo";
 import DetailBottomBar from "@/views/detail/childComps/DetailBottomBar";
-import AddSuccess from "@/views/detail/childComps/AddSuccess";
-
 
 import GoodsList from "@/components/content/goods/GoodsList";
 import Scroll from "@/components/common/scroll/Scroll";
@@ -36,6 +33,7 @@ import {getDetail, Goods, Shop, GoodsParam, getRecommend} from "@/network/detail
 import {backTopMixin, itemListenerMixin} from "@/common/mixin";
 import {debounce} from "@/common/utils";
 import {BACKTOP_DISTANCE} from "@/common/const";
+import {mapActions} from 'vuex'
 
 
 export default {
@@ -51,7 +49,6 @@ export default {
     DetailBottomBar,
     GoodsList,
     Scroll,
-    AddSuccess
   },
   mixins: [itemListenerMixin, backTopMixin],
   data() {
@@ -67,7 +64,7 @@ export default {
       themeTopYs: [],
       getThemeTopY: null,
       currentIndex: 0,
-      isaddSuccess: false
+
     }
   },
 
@@ -144,6 +141,7 @@ export default {
 
   },
   methods: {
+    ...mapActions(['addCart']), //映射actions中的方法
     detailImageLoad() {
       this.newRefresh()
       // this.newRefresh()
@@ -189,7 +187,8 @@ export default {
       this.isTabFixed = (-position.y) > this.tabOffsetTop
     },
     //1.添加购物车
-    addCart() {
+    addToCart() {
+      //1.获取购物车需要展示的信息
       const product = {}
       product.image = this.topImages[0];
       product.desc = this.goods.desc;
@@ -197,17 +196,23 @@ export default {
       product.price = this.goods.realPrice;
       product.iid = this.iid;
 
-      //将product添加入state
-      this.$store.dispatch('addCart', product)
+      //2.将product添加入state，将商品添加到购物车里 // this.$store.dispatch('addCart', product).then(res => {
+      //   console.log(res);
+      // })(1.Promise 2.映射actions)
+      //映射actions之后可以直接调用
+      this.addCart(product).then(res => {
+        // this.show = true
+        // this.message = res
+        // setTimeout(() => {
+        //   this.show = false
+        //   this.message = ''
+        // }, 1500)
 
-      setTimeout(() => {
-        this.isaddSuccess = !this.isaddSuccess
-        // console.log('111')
-      }, 500)
-      setTimeout(() => {
-        this.isaddSuccess = !this.isaddSuccess
-        // console.log('2222')
-      }, 2000)
+        this.$toast.show(res, 1500)
+        console.log(this.$toast)
+      })
+
+
     }
   },
   mounted() {
